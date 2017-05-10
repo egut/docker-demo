@@ -1,0 +1,56 @@
+version: "3.1"
+
+services:
+  redis:
+    image: egut/redis:latest
+    networks:
+      - docker-demo
+    ports:
+      - 6379:6379
+    secrets:
+      - redis_secret
+    deploy:
+      placement:
+        constraints:
+          - node.labels.os == amd64
+
+  web:
+    image: egut/react-docker-demo:latest
+    environment:
+      - REDIS_HOST=redis
+    ports:
+      - 80:3000
+    networks:
+      - docker-demo
+    depends_on:
+      - redis
+    secrets:
+      - redis_secret
+    deploy:
+      placement:
+        constraints:
+          - node.labels.os == amd64
+
+  blinkt:
+    image: egut/blinkt:latest
+    environment:
+      - REDIS_HOST=docker-elb-368395727.eu-west-2.elb.amazonaws.com
+    volumes:
+      - /sys:/sys
+    depends_on:
+      - redis
+    deploy:
+      placement:
+        constraints:
+          - node.labels.os == arm
+    networks:
+      - docker-demo
+    secrets:
+      - redis_secret
+
+secrets:
+  redis_secret:
+    external: true
+
+networks:
+  docker-demo:
